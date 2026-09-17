@@ -1,0 +1,32 @@
+.tasks-page {
+  padding: 24px;
+}
+
+.tasks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.tasks-header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.tasks-header p {
+  margin: 6px 0 0;
+}
+
+.create-task-button {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tasks-content {
+  border-radius: 8px;
+  padding: 24px;
+}

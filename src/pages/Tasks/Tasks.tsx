@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./Tasks.css";
-import { getTasks } from "../../services/taskService";
+import { getTasks } from "../../services/TaskService";
 import type { Task } from "../../interfaces/Task";
 
 const Tasks = () => {

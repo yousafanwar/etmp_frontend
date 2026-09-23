@@ -1,0 +1,9 @@
+.main-content {
+  min-height: 100vh;
+  padding-left: 256px;
+  background: #faf8ff;
+}
+
+@media (max-width: 1023px) {
+  .main-content { padding-left: 0; }
+}

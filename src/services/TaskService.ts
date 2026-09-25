@@ -1,51 +1,40 @@
-import type { Task } from "../interfaces/Task";
-import type { PagedResult } from "../interfaces/PagedResult";
-import type { GetTasksParams } from "../interfaces/Task";
+import { api } from "../api/client";
+import type { PagedResult, Task, TaskStatus } from "../types/task";
 
-const API_URL = "https://localhost:7010/api/Tasks";
+interface TaskQuery {
+  page?: number;
+  pageSize?: number;
+  status?: TaskStatus;
+  assigneeId?: number;
+}
 
-export const getTasks = async ( params: GetTasksParams = {} ): Promise<PagedResult<Task>> => {
+export const getTasks = (query: TaskQuery = {}, signal?: AbortSignal) => {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([k, v]) => v !== undefined && params.set(k, String(v)));
+  return api.get<PagedResult<Task>>(`/tasks?${params}`, signal);
+};
 
-  const queryParams = new URLSearchParams();
+export const getTask = (id: number) => api.get<Task>(`/tasks/${id}`);
+export const createTask = (title: string, description: string) =>
+  api.post<Task>("/tasks", { title, description });
+export const updateTask = (id: number, title: string, description: string) =>
+  api.put<Task>(`/tasks/${id}`, { title, description });
+export const deleteTask = (id: number) => api.delete<void>(`/tasks/${id}`);
+export const assignTask = (id: number, userId: number) =>
+  api.put<Task>(`/tasks/${id}/assign/${userId}`);
+export const startTask = (id: number) => api.put<Task>(`/tasks/${id}/start`);
+export const completeTask = (id: number) => api.put<Task>(`/tasks/${id}/complete`);
 
-  if (params.pageNumber) {
-    queryParams.append("pageNumber", params.pageNumber.toString());
-  }
+// Dashboard stat: one tiny request per status, read only totalCount
+export const getTaskStats = async (signal?: AbortSignal) => {
+  const count = (status?: TaskStatus) =>
+    getTasks({ page: 1, pageSize: 1, status }, signal).then((r) => r.totalCount);
 
-  if (params.pageSize) {
-    queryParams.append("pageSize", params.pageSize.toString());
-  }
-
-  if (params.title) {
-    queryParams.append("title", params.title);
-  }
-
-  if (params.status) {
-    queryParams.append("status", params.status);
-  }
-
-  if (params.assigneeId) {
-    queryParams.append("assigneeId", params.assigneeId.toString());
-  }
-
-  if (params.sortBy) {
-    queryParams.append("sortBy", params.sortBy);
-  }
-
-  if (params.sortDescending !== undefined) {
-    queryParams.append(
-      "sortDescending",
-      params.sortDescending.toString()
-    );
-  }
-
-  const response = await fetch(
-    `${API_URL}?${queryParams.toString()}`
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch tasks");
-  }
-
-  return response.json();
+  const [total, pending, inProgress, completed] = await Promise.all([
+    count(),
+    count("Pending"),
+    count("InProgress"),
+    count("Completed"),
+  ]);
+  return { total, pending, inProgress, completed };
 };

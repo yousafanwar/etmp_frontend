@@ -1,10 +1,5 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "../../components/common/Icon";
 import AssigneeSelect from "../../components/tasks/AssigneeSelect";
 import {
@@ -76,6 +71,7 @@ const buildPageList = (page: number, totalPages: number): (number | "…")[] => 
 };
 
 const Tasks = () => {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -630,15 +626,19 @@ const Tasks = () => {
                         </label>
                       </td>
                       <td>
-                        <button type="button" className="tasks-id-link">
+                        <Link to={`/tasks/${task.id}`} className="tasks-id-link">
                           {formatTaskId(task.id)}
-                        </button>
+                        </Link>
                       </td>
                       <td>
-                        <div className="tasks-title-cell">
+                        <button
+                          type="button"
+                          className="tasks-title-cell tasks-title-link"
+                          onClick={() => navigate(`/tasks/${task.id}`)}
+                        >
                           <span className="tasks-row-title">{task.title}</span>
                           <span className="tasks-row-summary">{task.description}</span>
-                        </div>
+                        </button>
                       </td>
                       <td>
                         <div className="tasks-project">

@@ -615,6 +615,7 @@
   font-weight: 600;
   font-feature-settings: "tnum" 1;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .tasks-id-link:hover {
@@ -627,6 +628,19 @@
   gap: 2px;
   min-width: 220px;
   max-width: 420px;
+}
+
+.tasks-title-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tasks-title-link:hover .tasks-row-title {
+  color: var(--primary-container);
 }
 
 .tasks-row-title {

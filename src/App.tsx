@@ -3,6 +3,7 @@ import { tokenStore } from "./api/client";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
+import TaskDetails from "./pages/TaskDetails/TaskDetails";
 import Tasks from "./pages/Tasks/Tasks";
 
 const RequireAuth = () => {
@@ -22,6 +23,7 @@ const App = () => {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/tasks/:id" element={<TaskDetails />} />
         </Route>
       </Route>
 

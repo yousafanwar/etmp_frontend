@@ -1,5 +1,6 @@
 import { api } from "../api/client";
 import type { PagedResult, Task, TaskQuery, TaskStatus } from "../types/task";
+import type { TaskHistory } from "../types/taskHistory";
 
 export type { TaskQuery };
 
@@ -12,7 +13,8 @@ export const getTasks = (query: TaskQuery = {}, signal?: AbortSignal) => {
   return api.get<PagedResult<Task>>(`/tasks${qs ? `?${qs}` : ""}`, signal);
 };
 
-export const getTask = (id: number) => api.get<Task>(`/tasks/${id}`);
+export const getTask = (id: number, signal?: AbortSignal) =>
+  api.get<Task>(`/tasks/${id}`, signal);
 
 export const createTask = (title: string, description: string) =>
   api.post<Task>("/tasks", { title, description });
@@ -28,6 +30,9 @@ export const assignTask = (id: number, userId: number) =>
 export const startTask = (id: number) => api.put<Task>(`/tasks/${id}/start`);
 
 export const completeTask = (id: number) => api.put<Task>(`/tasks/${id}/complete`);
+
+export const getTaskHistory = (taskId: number, signal?: AbortSignal) =>
+  api.get<TaskHistory[]>(`/tasks/${taskId}/history`, signal);
 
 export const getTaskStats = async (signal?: AbortSignal) => {
   const count = (status?: TaskStatus) =>

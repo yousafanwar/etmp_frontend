@@ -1,5 +1,7 @@
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import Icon from "../common/Icon";
+import { logout } from "../../services/authService";
 import "./Sidebar.css";
 
 interface NavItem {
@@ -17,6 +19,22 @@ const navItems: NavItem[] = [
 ];
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      navigate("/login", { replace: true });
+      setLoggingOut(false);
+    }
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-top">
@@ -29,7 +47,6 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Workspace switcher */}
         <button type="button" className="workspace-switcher">
           <span className="workspace-avatar">A</span>
           <span className="workspace-text">
@@ -39,7 +56,6 @@ const Sidebar = () => {
           <Icon name="unfold_more" size={18} className="workspace-chevron" />
         </button>
 
-        {/* Navigation */}
         <nav className="sidebar-nav" aria-label="Main navigation">
           {navItems.map((item) => (
             <NavLink
@@ -57,7 +73,6 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* Footer */}
       <div className="sidebar-bottom">
         <div className="usage-card">
           <div className="usage-row">
@@ -72,6 +87,16 @@ const Sidebar = () => {
             <span className="usage-value usage-value-sm">142 / 200</span>
           </div>
         </div>
+
+        <button
+          type="button"
+          className="sidebar-logout"
+          onClick={() => void handleLogout()}
+          disabled={loggingOut}
+        >
+          <Icon name="logout" size={18} />
+          {loggingOut ? "Signing out…" : "Log out"}
+        </button>
 
         <div className="sidebar-footer-row">
           <a href="/help" className="help-link">

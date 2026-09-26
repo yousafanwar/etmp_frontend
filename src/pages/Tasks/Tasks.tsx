@@ -6,6 +6,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import Icon from "../../components/common/Icon";
+import AssigneeSelect from "../../components/tasks/AssigneeSelect";
 import {
   assignTask,
   completeTask,
@@ -14,7 +15,9 @@ import {
   getTasks,
   startTask,
 } from "../../services/TaskService";
+import { getRoles, getUsers } from "../../services/userService";
 import type { Task, TaskStatus } from "../../types/task";
+import type { User } from "../../types/user";
 import "./Tasks.css";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -26,6 +29,34 @@ const STATUS_META: Record<
   Pending: { label: "Todo", className: "status-todo", icon: "radio_button_unchecked" },
   InProgress: { label: "In Progress", className: "status-progress", icon: "pending" },
   Completed: { label: "Done", className: "status-done", icon: "check_circle" },
+};
+
+type PlaceholderPriority = "P0" | "P1" | "P2" | "P3";
+
+const PRIORITY_META: Record<
+  PlaceholderPriority,
+  { label: string; className: string; icon: string }
+> = {
+  P0: { label: "P0 Critical", className: "priority-p0", icon: "diamond" },
+  P1: { label: "P1 High", className: "priority-p1", icon: "priority_high" },
+  P2: { label: "P2 Medium", className: "priority-p2", icon: "remove" },
+  P3: { label: "P3 Low", className: "priority-p3", icon: "arrow_downward" },
+};
+
+const PLACEHOLDER_PROJECTS = [
+  { name: "Apollo Cloud Migration", tone: "blue" },
+  { name: "Enterprise SOC2", tone: "green" },
+  { name: "NextGen Mobile", tone: "purple" },
+  { name: "Platform Core", tone: "orange" },
+] as const;
+
+/** Temporary placeholders until project/priority ship on the API. */
+const getPlaceholderProject = (taskId: number) =>
+  PLACEHOLDER_PROJECTS[taskId % PLACEHOLDER_PROJECTS.length];
+
+const getPlaceholderPriority = (taskId: number): PlaceholderPriority => {
+  const levels: PlaceholderPriority[] = ["P0", "P1", "P2", "P3"];
+  return levels[taskId % levels.length];
 };
 
 const formatTaskId = (id: number) => `TASK-${String(id).padStart(4, "0")}`;
@@ -73,10 +104,62 @@ const Tasks = () => {
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignUserId, setAssignUserId] = useState("");
 
+  const [users, setUsers] = useState<User[]>([]);
+  const [roleNames, setRoleNames] = useState<Record<number, string>>({});
+
   const searchRef = useRef<HTMLInputElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
   const refresh = () => setReloadKey((k) => k + 1);
+
+  const mergeUsersFromTasks = (list: User[], taskList: Task[]) => {
+    const byId = new Map(list.map((user) => [user.id, user]));
+    for (const task of taskList) {
+      const assignee = task.assignee;
+      if (!assignee || byId.has(assignee.id)) continue;
+      byId.set(assignee.id, {
+        id: assignee.id,
+        firstName: assignee.firstName,
+        lastName: assignee.lastName,
+        email: assignee.email,
+        roleId: 0,
+      });
+    }
+    return [...byId.values()];
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    getUsers(controller.signal)
+      .then((userList) => {
+        if (controller.signal.aborted) return;
+        const normalized = Array.isArray(userList) ? userList : [];
+        setUsers((prev) => {
+          const byId = new Map(normalized.map((user) => [user.id, user]));
+          for (const user of prev) {
+            if (!byId.has(user.id)) byId.set(user.id, user);
+          }
+          return [...byId.values()];
+        });
+      })
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Failed to load users for assignee picker", err);
+      });
+
+    getRoles(controller.signal)
+      .then((roles) => {
+        if (controller.signal.aborted) return;
+        setRoleNames(Object.fromEntries(roles.map((role) => [role.id, role.name])));
+      })
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Failed to load roles for assignee picker", err);
+      });
+
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -91,11 +174,13 @@ const Tasks = () => {
       controller.signal,
     )
       .then((result) => {
+        if (controller.signal.aborted) return;
         setTasks(result.items);
         setTotalCount(result.totalCount);
         setTotalPages(Math.max(1, result.totalPages || 1));
         setSelected(new Set());
         setError("");
+        setUsers((prev) => mergeUsersFromTasks(prev, result.items));
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
@@ -221,6 +306,36 @@ const Tasks = () => {
       console.error(err);
     } finally {
       setCreateSubmitting(false);
+    }
+  };
+
+  const handleRowAssign = async (taskId: number, userId: number) => {
+    setActionError("");
+    try {
+      const updated = await assignTask(taskId, userId);
+      setTasks((prev) =>
+        prev.map((task) => {
+          if (task.id !== taskId) return task;
+          // Prefer API payload; fall back to local user list if assignee omitted.
+          if (updated.assignee) return updated;
+          const user = users.find((u) => u.id === userId);
+          return {
+            ...updated,
+            assignee: user
+              ? {
+                  id: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  email: user.email,
+                }
+              : task.assignee,
+          };
+        }),
+      );
+    } catch (err) {
+      setActionError("Could not assign task.");
+      console.error(err);
+      throw err;
     }
   };
 
@@ -489,13 +604,18 @@ const Tasks = () => {
                   </th>
                   <th>Task ID</th>
                   <th>Task Title &amp; Summary</th>
+                  <th>Project</th>
+                  <th>Priority</th>
                   <th>Status</th>
+                  <th>Assignee</th>
                   <th className="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {tasks.map((task) => {
                   const meta = STATUS_META[task.status] ?? STATUS_META.Pending;
+                  const project = getPlaceholderProject(task.id);
+                  const priority = PRIORITY_META[getPlaceholderPriority(task.id)];
                   const isSelected = selected.has(task.id);
                   return (
                     <tr key={task.id} className={isSelected ? "is-selected" : ""}>
@@ -521,10 +641,32 @@ const Tasks = () => {
                         </div>
                       </td>
                       <td>
+                        <div className="tasks-project">
+                          <span className={`tasks-project-dot tone-${project.tone}`} />
+                          <span className="tasks-project-name">{project.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`tasks-priority ${priority.className}`}>
+                          <Icon name={priority.icon} size={14} />
+                          {priority.label}
+                        </span>
+                      </td>
+                      <td>
                         <span className={`tasks-status ${meta.className}`}>
                           {meta.icon && <Icon name={meta.icon} size={14} />}
                           {meta.label}
                         </span>
+                      </td>
+                      <td>
+                        <AssigneeSelect
+                          taskId={task.id}
+                          assignee={task.assignee}
+                          users={users}
+                          roleNames={roleNames}
+                          disabled={busy}
+                          onAssign={handleRowAssign}
+                        />
                       </td>
                       <td className="col-actions">
                         <div className="tasks-row-actions">

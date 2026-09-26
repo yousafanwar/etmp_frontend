@@ -10,6 +10,9 @@ export const login = async (email: string, password: string) => {
 export const logout = async () => {
   try {
     await api.post<void>("/users/logout");
+  } catch (err) {
+    // Still clear local session if the API call fails (e.g. already expired).
+    console.error(err);
   } finally {
     tokenStore.clear();
   }

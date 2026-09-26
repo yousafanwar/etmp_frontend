@@ -648,6 +648,64 @@
   white-space: nowrap;
 }
 
+.tasks-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.tasks-project-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tasks-project-dot.tone-blue { background: #3b82f6; }
+.tasks-project-dot.tone-green { background: #16a34a; }
+.tasks-project-dot.tone-purple { background: #7c3aed; }
+.tasks-project-dot.tone-orange { background: #ea580c; }
+
+.tasks-project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+}
+
+.tasks-priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.priority-p0 {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.priority-p1 {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+.priority-p2 {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.priority-p3 {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 .tasks-status {
   display: inline-flex;
   align-items: center;

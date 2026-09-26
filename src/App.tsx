@@ -1,16 +1,31 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { tokenStore } from "./api/client";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import Login from "./pages/Login/Login";
 import Tasks from "./pages/Tasks/Tasks";
+
+const RequireAuth = () => {
+  if (!tokenStore.getAccess()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Outlet />;
+};
 
 const App = () => {
   return (
     <Routes>
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/tasks" element={<Tasks />} />
+      <Route path="/login" element={<Login />} />
+
+      <Route element={<RequireAuth />}>
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/tasks" element={<Tasks />} />
+        </Route>
       </Route>
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };

@@ -5,7 +5,7 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
-  assigneeId: number | null;
+  assigneeId?: number | null;
 }
 
 export interface PagedResult<T> {
@@ -13,4 +13,15 @@ export interface PagedResult<T> {
   totalCount: number;
   page: number;
   pageSize: number;
+  totalPages: number;
+}
+
+export interface TaskQuery {
+  page?: number;
+  pageSize?: number;
+  status?: TaskStatus;
+  assigneeId?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }

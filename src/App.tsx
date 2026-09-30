@@ -3,6 +3,8 @@ import { tokenStore } from "./api/client";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
+import ProjectDetails from "./pages/ProjectDetails/ProjectDetails";
+import Projects from "./pages/Projects/Projects";
 import TaskDetails from "./pages/TaskDetails/TaskDetails";
 import Tasks from "./pages/Tasks/Tasks";
 
@@ -22,6 +24,8 @@ const App = () => {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:id" element={<ProjectDetails />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/tasks/:id" element={<TaskDetails />} />
         </Route>

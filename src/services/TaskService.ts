@@ -16,8 +16,8 @@ export const getTasks = (query: TaskQuery = {}, signal?: AbortSignal) => {
 export const getTask = (id: number, signal?: AbortSignal) =>
   api.get<Task>(`/tasks/${id}`, signal);
 
-export const createTask = (title: string, description: string) =>
-  api.post<Task>("/tasks", { title, description });
+export const createTask = (title: string, description: string, projectId: number) =>
+  api.post<Task>("/tasks", { title, description, projectId });
 
 export const updateTask = (id: number, title: string, description: string) =>
   api.put<Task>(`/tasks/${id}`, { title, description });

@@ -61,7 +61,7 @@ const Sidebar = () => {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to !== "/tasks"}
+              end={item.to !== "/tasks" && item.to !== "/projects"}
               className={({ isActive }) =>
                 `sidebar-link ${isActive ? "is-active" : ""}`
               }

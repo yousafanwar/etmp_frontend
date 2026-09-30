@@ -28,6 +28,7 @@ export interface TaskQuery {
   pageSize?: number;
   status?: TaskStatus;
   assigneeId?: number;
+  projectId?: number;
   search?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";

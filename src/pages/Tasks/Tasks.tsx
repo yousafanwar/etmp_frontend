@@ -10,7 +10,9 @@ import {
   getTasks,
   startTask,
 } from "../../services/TaskService";
+import { getProjects } from "../../services/projectService";
 import { getRoles, getUsers } from "../../services/userService";
+import type { Project } from "../../types/project";
 import type { Task, TaskStatus } from "../../types/task";
 import type { User } from "../../types/user";
 import "./Tasks.css";
@@ -94,7 +96,9 @@ const Tasks = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [createTitle, setCreateTitle] = useState("");
   const [createDescription, setCreateDescription] = useState("");
+  const [createProjectId, setCreateProjectId] = useState("");
   const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -152,6 +156,16 @@ const Tasks = () => {
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
         console.error("Failed to load roles for assignee picker", err);
+      });
+
+    getProjects(controller.signal)
+      .then((list) => {
+        if (controller.signal.aborted) return;
+        setProjects(Array.isArray(list) ? list : []);
+      })
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Failed to load projects for create task", err);
       });
 
     return () => controller.abort();
@@ -287,13 +301,19 @@ const Tasks = () => {
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     if (!createTitle.trim() || !createDescription.trim()) return;
+    const projectId = Number(createProjectId);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      setActionError("Select a project for this task.");
+      return;
+    }
     setCreateSubmitting(true);
     setActionError("");
     try {
-      await createTask(createTitle.trim(), createDescription.trim());
+      await createTask(createTitle.trim(), createDescription.trim(), projectId);
       setCreateOpen(false);
       setCreateTitle("");
       setCreateDescription("");
+      setCreateProjectId("");
       setLoading(true);
       if (page === 1) refresh();
       else setPage(1);
@@ -801,6 +821,24 @@ const Tasks = () => {
             </div>
             <form className="tasks-modal-form" onSubmit={(e) => void handleCreate(e)}>
               <label>
+                Project
+                <select
+                  required
+                  value={createProjectId}
+                  onChange={(e) => setCreateProjectId(e.target.value)}
+                  aria-label="Project"
+                >
+                  <option value="" disabled>
+                    {projects.length === 0 ? "No projects available" : "Select a project"}
+                  </option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
                 Title
                 <input
                   type="text"
@@ -834,7 +872,7 @@ const Tasks = () => {
                 <button
                   type="submit"
                   className="tasks-btn tasks-btn-primary"
-                  disabled={createSubmitting}
+                  disabled={createSubmitting || projects.length === 0}
                 >
                   {createSubmitting ? "Creating…" : "Create Task"}
                 </button>

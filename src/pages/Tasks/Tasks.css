@@ -942,7 +942,8 @@
 }
 
 .tasks-modal-form input,
-.tasks-modal-form textarea {
+.tasks-modal-form textarea,
+.tasks-modal-form select {
   border: 1px solid var(--outline);
   border-radius: 8px;
   padding: 10px 12px;
@@ -953,7 +954,8 @@
 }
 
 .tasks-modal-form input:focus,
-.tasks-modal-form textarea:focus {
+.tasks-modal-form textarea:focus,
+.tasks-modal-form select:focus {
   outline: 0;
   border-color: var(--primary-container);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);

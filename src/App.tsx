@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
 import ProjectDetails from "./pages/ProjectDetails/ProjectDetails";
 import Projects from "./pages/Projects/Projects";
+import Signup from "./pages/Signup/Signup";
 import TaskDetails from "./pages/TaskDetails/TaskDetails";
 import Tasks from "./pages/Tasks/Tasks";
 
@@ -19,6 +20,7 @@ const App = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
 
       <Route element={<RequireAuth />}>
         <Route element={<MainLayout />}>

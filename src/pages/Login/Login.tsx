@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import Icon from "../../components/common/Icon";
 import { ApiError, tokenStore } from "../../api/client";
 import { login } from "../../services/authService";
@@ -158,10 +158,10 @@ const Login = () => {
 
           <div className="login-card-footer">
             <span>Don&apos;t have an ETMP account?</span>{" "}
-            <a href="#register" className="login-create-link">
+            <Link to="/signup" className="login-create-link">
               Create an account
               <Icon name="arrow_forward" size={14} />
-            </a>
+            </Link>
           </div>
         </section>
       </main>

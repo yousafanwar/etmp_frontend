@@ -1,0 +1,64 @@
+.signup-card {
+  max-width: 480px;
+}
+
+.signup-name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.signup-select-wrap {
+  position: relative;
+}
+
+.signup-select {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px;
+  border: 1px solid var(--slate-300);
+  border-radius: 6px;
+  background: var(--surface-lowest);
+  color: var(--slate-900);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.signup-select:hover:not(:disabled) {
+  border-color: var(--slate-400);
+}
+
+.signup-select:focus {
+  border-color: var(--primary-container);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.signup-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.signup-select-chevron {
+  position: absolute;
+  right: 12px;
+  color: var(--slate-400);
+  pointer-events: none;
+}
+
+.signup-field-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--error);
+}
+
+@media (max-width: 640px) {
+  .signup-name-row {
+    grid-template-columns: 1fr;
+  }
+}

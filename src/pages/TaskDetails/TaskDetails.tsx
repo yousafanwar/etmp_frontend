@@ -366,6 +366,7 @@ const TaskDetails = () => {
   const assigneeName = task.assignee
     ? `${task.assignee.firstName} ${task.assignee.lastName}`.trim()
     : null;
+  const projectName = task.projectName?.trim() || null;
 
   return (
     <div className="task-details">
@@ -395,6 +396,12 @@ const TaskDetails = () => {
       <div className="td-page-header">
         <nav className="td-breadcrumbs" aria-label="Breadcrumb">
           <Link to="/tasks">Tasks</Link>
+          {projectName && task.projectId ? (
+            <>
+              <Icon name="chevron_right" size={14} />
+              <Link to={`/projects/${task.projectId}`}>{projectName}</Link>
+            </>
+          ) : null}
           <Icon name="chevron_right" size={14} />
           <span>{formatTaskId(task.id)}</span>
           <Icon name="chevron_right" size={14} />
@@ -452,6 +459,19 @@ const TaskDetails = () => {
           <section className="td-card td-title-card">
             <div className="td-title-meta">
               <span className="td-id-pill">Task {formatTaskId(task.id)}</span>
+              {projectName && (
+                task.projectId ? (
+                  <Link to={`/projects/${task.projectId}`} className="td-project-chip">
+                    <Icon name="folder" size={14} />
+                    {projectName}
+                  </Link>
+                ) : (
+                  <span className="td-project-chip">
+                    <Icon name="folder" size={14} />
+                    {projectName}
+                  </span>
+                )
+              )}
               {createdAt && (
                 <span className="td-created">
                   <Icon name="schedule" size={14} />
@@ -711,6 +731,17 @@ const TaskDetails = () => {
             <div className="td-prop">
               <span className="td-prop-label">Task ID</span>
               <span className="td-prop-value">{formatTaskId(task.id)}</span>
+            </div>
+
+            <div className="td-prop">
+              <span className="td-prop-label">Project</span>
+              {projectName && task.projectId ? (
+                <Link to={`/projects/${task.projectId}`} className="td-prop-link">
+                  {projectName}
+                </Link>
+              ) : (
+                <span className="td-prop-value">{projectName || "—"}</span>
+              )}
             </div>
 
             <div className="td-prop">

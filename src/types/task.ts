@@ -12,6 +12,8 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
+  projectId: number;
+  projectName: string;
   assignee: TaskAssignee | null;
 }
 

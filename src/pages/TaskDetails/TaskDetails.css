@@ -442,6 +442,34 @@
   font-size: 12px;
 }
 
+.td-project-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: #1a56db;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a.td-project-chip:hover {
+  text-decoration: underline;
+}
+
+.td-prop-link {
+  color: var(--primary-container);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.td-prop-link:hover {
+  text-decoration: underline;
+}
+
 .td-title-row {
   display: flex;
   align-items: flex-start;

@@ -40,17 +40,12 @@ const PRIORITY_META: Record<
   P3: { label: "P3 Low", className: "priority-p3", icon: "arrow_downward" },
 };
 
-const PLACEHOLDER_PROJECTS = [
-  { name: "Apollo Cloud Migration", tone: "blue" },
-  { name: "Enterprise SOC2", tone: "green" },
-  { name: "NextGen Mobile", tone: "purple" },
-  { name: "Platform Core", tone: "orange" },
-] as const;
+const PROJECT_TONES = ["blue", "green", "purple", "orange"] as const;
 
-/** Temporary placeholders until project/priority ship on the API. */
-const getPlaceholderProject = (taskId: number) =>
-  PLACEHOLDER_PROJECTS[taskId % PLACEHOLDER_PROJECTS.length];
+const getProjectTone = (projectId: number) =>
+  PROJECT_TONES[Math.abs(projectId) % PROJECT_TONES.length];
 
+/** Temporary placeholder until priority ships on the API. */
 const getPlaceholderPriority = (taskId: number): PlaceholderPriority => {
   const levels: PlaceholderPriority[] = ["P0", "P1", "P2", "P3"];
   return levels[taskId % levels.length];
@@ -630,7 +625,8 @@ const Tasks = () => {
               <tbody>
                 {tasks.map((task) => {
                   const meta = STATUS_META[task.status] ?? STATUS_META.Pending;
-                  const project = getPlaceholderProject(task.id);
+                  const projectName = task.projectName?.trim() || "Unassigned project";
+                  const projectTone = getProjectTone(task.projectId || task.id);
                   const priority = PRIORITY_META[getPlaceholderPriority(task.id)];
                   const isSelected = selected.has(task.id);
                   return (
@@ -662,8 +658,17 @@ const Tasks = () => {
                       </td>
                       <td>
                         <div className="tasks-project">
-                          <span className={`tasks-project-dot tone-${project.tone}`} />
-                          <span className="tasks-project-name">{project.name}</span>
+                          <span className={`tasks-project-dot tone-${projectTone}`} />
+                          {task.projectId ? (
+                            <Link
+                              to={`/projects/${task.projectId}`}
+                              className="tasks-project-name"
+                            >
+                              {projectName}
+                            </Link>
+                          ) : (
+                            <span className="tasks-project-name">{projectName}</span>
+                          )}
                         </div>
                       </td>
                       <td>

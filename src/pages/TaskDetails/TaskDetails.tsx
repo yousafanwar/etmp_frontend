@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Icon from "../../components/common/Icon";
+import TopbarUser from "../../components/layout/TopbarUser";
 import AssigneeSelect from "../../components/tasks/AssigneeSelect";
 import { createComment, getComments } from "../../services/commentService";
 import {
@@ -381,15 +382,7 @@ const TaskDetails = () => {
             <Icon name="notifications" size={20} />
             <span className="td-notif-badge">3</span>
           </button>
-          <div className="td-user">
-            <div className="td-user-avatar" aria-hidden="true">
-              ER
-            </div>
-            <div className="td-user-meta">
-              <span className="td-user-name">Elena Rostova</span>
-              <span className="td-user-role">VP of Engineering</span>
-            </div>
-          </div>
+          <TopbarUser />
         </div>
       </header>
 

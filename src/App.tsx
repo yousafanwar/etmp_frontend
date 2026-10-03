@@ -1,5 +1,6 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { tokenStore } from "./api/client";
+import { AuthProvider } from "./auth/AuthContext";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
@@ -13,7 +14,11 @@ const RequireAuth = () => {
   if (!tokenStore.getAccess()) {
     return <Navigate to="/login" replace />;
   }
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
 };
 
 const App = () => {

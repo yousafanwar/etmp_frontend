@@ -4,6 +4,9 @@ import type { CreateUserRequest, Role, User } from "../types/user";
 export const getUsers = (signal?: AbortSignal) =>
   api.get<User[]>("/users", signal);
 
+export const getUser = (id: number, signal?: AbortSignal) =>
+  api.get<User>(`/users/${id}`, signal);
+
 export const getRoles = (signal?: AbortSignal) =>
   api.get<Role[]>("/roles", signal);
 

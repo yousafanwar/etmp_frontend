@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Icon from "../../components/common/Icon";
+import TopbarUser from "../../components/layout/TopbarUser";
 import {
   createTask,
   getTasks,
@@ -463,15 +464,7 @@ const ProjectDetails = () => {
             <Icon name="notifications" size={20} />
             <span className="pd-notif-badge">3</span>
           </button>
-          <div className="pd-user">
-            <div className="pd-user-avatar" aria-hidden="true">
-              ER
-            </div>
-            <div className="pd-user-meta">
-              <span className="pd-user-name">Elena Rostova</span>
-              <span className="pd-user-role">VP of Engineering</span>
-            </div>
-          </div>
+          <TopbarUser />
         </div>
       </header>
 

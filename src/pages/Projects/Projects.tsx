@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/common/Icon";
+import TopbarUser from "../../components/layout/TopbarUser";
 import { createProject, getProjects, getProjectUsers } from "../../services/projectService";
 import type { Project, ProjectStatus, ProjectUser } from "../../types/project";
 import "./Projects.css";
@@ -495,15 +496,7 @@ const Projects = () => {
             <Icon name="notifications" size={20} />
             <span className="proj-notif-badge">3</span>
           </button>
-          <div className="proj-user">
-            <div className="proj-user-avatar" aria-hidden="true">
-              ER
-            </div>
-            <div className="proj-user-meta">
-              <span className="proj-user-name">Elena Rostova</span>
-              <span className="proj-user-role">VP of Engineering</span>
-            </div>
-          </div>
+          <TopbarUser />
         </div>
       </header>
 

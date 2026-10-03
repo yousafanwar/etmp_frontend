@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "../../components/common/Icon";
+import TopbarUser from "../../components/layout/TopbarUser";
 import AssigneeSelect from "../../components/tasks/AssigneeSelect";
 import {
   assignTask,
@@ -416,15 +417,7 @@ const Tasks = () => {
             <Icon name="notifications" size={20} />
             <span className="tasks-notif-badge">3</span>
           </button>
-          <div className="tasks-user">
-            <div className="tasks-user-avatar" aria-hidden="true">
-              ER
-            </div>
-            <div className="tasks-user-meta">
-              <span className="tasks-user-name">User 1</span>
-              <span className="tasks-user-role">User 1's department</span>
-            </div>
-          </div>
+          <TopbarUser />
         </div>
       </header>
 

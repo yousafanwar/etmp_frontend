@@ -9,6 +9,7 @@ import Projects from "./pages/Projects/Projects";
 import Signup from "./pages/Signup/Signup";
 import TaskDetails from "./pages/TaskDetails/TaskDetails";
 import Tasks from "./pages/Tasks/Tasks";
+import Team from "./pages/Team/Team";
 
 const RequireAuth = () => {
   if (!tokenStore.getAccess()) {
@@ -35,6 +36,7 @@ const App = () => {
           <Route path="/projects/:id" element={<ProjectDetails />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/tasks/:id" element={<TaskDetails />} />
+          <Route path="/team" element={<Team />} />
         </Route>
       </Route>
 

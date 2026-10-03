@@ -488,10 +488,6 @@ const Projects = () => {
           />
         </label>
         <div className="proj-topbar-right">
-          <button type="button" className="proj-btn proj-btn-primary proj-btn-sm">
-            <Icon name="add" size={18} />
-            New Task
-          </button>
           <button type="button" className="proj-icon-btn" aria-label="Notifications">
             <Icon name="notifications" size={20} />
             <span className="proj-notif-badge">3</span>

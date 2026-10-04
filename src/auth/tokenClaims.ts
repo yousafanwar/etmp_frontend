@@ -29,6 +29,23 @@ const asString = (value: unknown): string => {
   return "";
 };
 
+const readRoleClaim = (payload: Record<string, unknown>): string => {
+  const candidates = [
+    payload[ROLE_URI],
+    payload.role,
+    payload.roles,
+    payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"],
+  ];
+  for (const candidate of candidates) {
+    const role = asString(candidate).trim();
+    if (role) return role;
+  }
+  return "";
+};
+
+export const isAdminRoleName = (roleName?: string | null) =>
+  (roleName ?? "").trim().toLowerCase() === "admin";
+
 export const getAccessTokenClaims = (token: string): AccessTokenClaims | null => {
   const payload = decodePayload(token);
   if (!payload) return null;
@@ -40,6 +57,6 @@ export const getAccessTokenClaims = (token: string): AccessTokenClaims | null =>
   return {
     userId,
     email: asString(payload[EMAIL_URI] ?? payload.email),
-    role: asString(payload[ROLE_URI] ?? payload.role),
+    role: readRoleClaim(payload),
   };
 };

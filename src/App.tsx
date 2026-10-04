@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
 import ProjectDetails from "./pages/ProjectDetails/ProjectDetails";
 import Projects from "./pages/Projects/Projects";
+import Settings from "./pages/Settings/Settings";
 import Signup from "./pages/Signup/Signup";
 import TaskDetails from "./pages/TaskDetails/TaskDetails";
 import Tasks from "./pages/Tasks/Tasks";
@@ -35,6 +36,7 @@ const App = () => {
           <Route path="/projects/:id" element={<ProjectDetails />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/tasks/:id" element={<TaskDetails />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
 

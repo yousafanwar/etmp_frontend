@@ -34,3 +34,6 @@ export const addUserSkill = (userId: number, skillId: number) =>
 
 export const removeUserSkill = (userId: number, skillId: number) =>
   api.delete<void>(`/users/${userId}/skills/${skillId}`);
+
+export const deleteUser = (id: number) =>
+  api.delete<void>(`/users/${id}`);

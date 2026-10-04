@@ -10,6 +10,7 @@ import Settings from "./pages/Settings/Settings";
 import Signup from "./pages/Signup/Signup";
 import TaskDetails from "./pages/TaskDetails/TaskDetails";
 import Tasks from "./pages/Tasks/Tasks";
+import Team from "./pages/Team/Team";
 
 const RequireAuth = () => {
   if (!tokenStore.getAccess()) {
@@ -37,6 +38,7 @@ const App = () => {
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/tasks/:id" element={<TaskDetails />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/team" element={<Team />} />
         </Route>
       </Route>
 

@@ -603,6 +603,42 @@
   color: var(--on-surface-variant);
 }
 
+.dashboard-state,
+.dashboard-empty {
+  margin: 0;
+  padding: 16px 4px;
+  color: var(--on-surface-variant);
+}
+
+.dashboard-state-error {
+  color: var(--error);
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: var(--surface-low);
+}
+
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.activity-item-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1279px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }

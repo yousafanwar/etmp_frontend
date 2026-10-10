@@ -42,15 +42,21 @@ async function refreshTokens(): Promise<boolean> {
 
 function send(path: string, { method = "GET", body, signal, auth = true }: RequestOptions) {
   const token = tokenStore.getAccess();
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
   return fetch(`${BASE_URL}${path}`, {
     method,
     signal,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(auth && token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body:
+      body === undefined
+        ? undefined
+        : isFormData
+          ? (body as FormData)
+          : JSON.stringify(body),
   });
 }
 
@@ -97,6 +103,15 @@ async function post<T>(path: string, body?: unknown, skipAuth?: boolean): Promis
   });
 }
 
+/** Multipart POST — do not JSON-encode; Content-Type is set by the browser. */
+async function postForm<T>(path: string, body: FormData, signal?: AbortSignal): Promise<T> {
+  return request<T>(path, {
+    method: "POST",
+    body,
+    signal,
+  });
+}
+
 async function put<T>(path: string, body?: unknown): Promise<T> {
   return request<T>(path, {
     method: "PUT",
@@ -113,6 +128,7 @@ async function remove<T>(path: string): Promise<T> {
 export const api = {
   get: get,
   post: post,
+  postForm: postForm,
   put: put,
   delete: remove,
 };

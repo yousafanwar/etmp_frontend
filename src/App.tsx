@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { tokenStore } from "./api/client";
 import { AuthProvider } from "./auth/AuthContext";
 import MainLayout from "./components/layout/MainLayout";
+import CreateTask from "./pages/CreateTask/CreateTask";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
 import ProjectDetails from "./pages/ProjectDetails/ProjectDetails";
@@ -36,6 +37,7 @@ const App = () => {
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetails />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/tasks/new" element={<CreateTask />} />
           <Route path="/tasks/:id" element={<TaskDetails />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/team" element={<Team />} />

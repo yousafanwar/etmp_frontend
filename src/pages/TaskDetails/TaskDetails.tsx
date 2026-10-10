@@ -4,6 +4,7 @@ import Icon from "../../components/common/Icon";
 import TopbarUser from "../../components/layout/TopbarUser";
 import AssigneeSelect from "../../components/tasks/AssigneeSelect";
 import { createComment, getComments } from "../../services/commentService";
+import { getSkills } from "../../services/skillService";
 import {
   assignTask,
   completeTask,
@@ -14,6 +15,7 @@ import {
 } from "../../services/TaskService";
 import { getRoles, getUsers } from "../../services/userService";
 import type { Comment } from "../../types/comment";
+import type { Skill } from "../../types/skill";
 import type { Task, TaskStatus } from "../../types/task";
 import type { TaskHistory } from "../../types/taskHistory";
 import type { User } from "../../types/user";
@@ -129,6 +131,7 @@ const TaskDetails = () => {
   const [history, setHistory] = useState<TaskHistory[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [roleNames, setRoleNames] = useState<Record<number, string>>({});
+  const [skillNames, setSkillNames] = useState<Record<number, string>>({});
 
   const [loading, setLoading] = useState(!invalidId);
   const [error, setError] = useState(invalidId ? "Invalid task id." : "");
@@ -207,6 +210,19 @@ const TaskDetails = () => {
       .then((roles) => {
         if (!controller.signal.aborted) {
           setRoleNames(Object.fromEntries(roles.map((role) => [role.id, role.name])));
+        }
+      })
+      .catch((err: unknown) => {
+        if (!controller.signal.aborted) console.error(err);
+      });
+    getSkills(controller.signal)
+      .then((skills: Skill[]) => {
+        if (!controller.signal.aborted) {
+          setSkillNames(
+            Object.fromEntries(
+              (Array.isArray(skills) ? skills : []).map((skill) => [skill.id, skill.name]),
+            ),
+          );
         }
       })
       .catch((err: unknown) => {
@@ -571,6 +587,31 @@ const TaskDetails = () => {
             )}
           </section>
 
+          {(task.originalFeedback || task.feedbackImageUrl) && (
+            <section className="td-card">
+              <div className="td-card-header">
+                <div className="td-card-heading">
+                  <Icon name="auto_awesome" size={18} />
+                  <h2>Original Feedback</h2>
+                </div>
+                <span className="td-audit-label">AI intake</span>
+              </div>
+              {task.originalFeedback && (
+                <p className="td-description td-feedback-text">{task.originalFeedback}</p>
+              )}
+              {task.feedbackImageUrl && (
+                <a
+                  className="td-feedback-image"
+                  href={task.feedbackImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img src={task.feedbackImageUrl} alt="Attached feedback" />
+                </a>
+              )}
+            </section>
+          )}
+
           <section className="td-card td-activity-card">
             <div className="td-tabs" role="tablist">
               <button
@@ -766,6 +807,19 @@ const TaskDetails = () => {
                 )}
               </div>
             </div>
+
+            {task.requiredSkillIds.length > 0 && (
+              <div className="td-prop">
+                <span className="td-prop-label">Required Skills</span>
+                <div className="td-skill-chips">
+                  {task.requiredSkillIds.map((skillId) => (
+                    <span key={skillId} className="td-skill-chip">
+                      {skillNames[skillId] ?? `Skill #${skillId}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="td-prop">
               <div className="td-prop-label-row">

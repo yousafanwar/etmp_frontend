@@ -455,7 +455,7 @@ const ProjectDetails = () => {
           <button
             type="button"
             className="pd-btn pd-btn-primary pd-btn-sm"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => navigate(`/tasks/new?projectId=${projectId}`)}
           >
             <Icon name="add" size={18} />
             New Task
@@ -553,7 +553,7 @@ const ProjectDetails = () => {
           <button
             type="button"
             className="pd-btn pd-btn-primary"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => navigate(`/tasks/new?projectId=${projectId}`)}
           >
             <Icon name="add" size={18} />
             New Issue
@@ -714,7 +714,7 @@ const ProjectDetails = () => {
                 <button
                   type="button"
                   className="pd-create-in-col"
-                  onClick={() => setCreateOpen(true)}
+                  onClick={() => navigate(`/tasks/new?projectId=${projectId}`)}
                 >
                   <Icon name="add" size={16} />
                   Create Task

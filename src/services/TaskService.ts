@@ -1,35 +1,79 @@
 import { api } from "../api/client";
-import type { PagedResult, Task, TaskQuery, TaskStatus } from "../types/task";
+import type {
+  AnalyzeTaskRequest,
+  AnalyzeTaskResponse,
+  PagedResult,
+  Task,
+  TaskApiDto,
+  TaskQuery,
+  TaskStatus,
+} from "../types/task";
+import { normalizeTask } from "../types/task";
 import type { TaskHistory } from "../types/taskHistory";
 
-export type { TaskQuery };
+export type { TaskQuery, AnalyzeTaskResponse };
 
-export const getTasks = (query: TaskQuery = {}, signal?: AbortSignal) => {
+export const getTasks = async (query: TaskQuery = {}, signal?: AbortSignal) => {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([k, v]) => {
     if (v !== undefined && v !== "") params.set(k, String(v));
   });
   const qs = params.toString();
-  return api.get<PagedResult<Task>>(`/tasks${qs ? `?${qs}` : ""}`, signal);
+  const page = await api.get<PagedResult<TaskApiDto>>(
+    `/tasks${qs ? `?${qs}` : ""}`,
+    signal,
+  );
+  return {
+    ...page,
+    items: (page.items ?? []).map(normalizeTask),
+  } satisfies PagedResult<Task>;
 };
 
-export const getTask = (id: number, signal?: AbortSignal) =>
-  api.get<Task>(`/tasks/${id}`, signal);
+export const getTask = async (id: number, signal?: AbortSignal) =>
+  normalizeTask(await api.get<TaskApiDto>(`/tasks/${id}`, signal));
 
-export const createTask = (title: string, description: string, projectId: number) =>
-  api.post<Task>("/tasks", { title, description, projectId });
+export const createTask = async (
+  title: string,
+  description: string,
+  projectId: number,
+) =>
+  normalizeTask(
+    await api.post<TaskApiDto>("/tasks", { title, description, projectId }),
+  );
 
-export const updateTask = (id: number, title: string, description: string) =>
-  api.put<Task>(`/tasks/${id}`, { title, description });
+/**
+ * AI analyze-and-create: uploads feedback (+ optional image) and returns the
+ * newly created task (`AnalyzeTaskResponse` / TaskItemDto).
+ */
+export const analyzeAndCreateTask = async (
+  { projectId, feedbackText = "", image }: AnalyzeTaskRequest,
+  signal?: AbortSignal,
+) => {
+  const form = new FormData();
+  form.append("ProjectId", String(projectId));
+  form.append("FeedbackText", feedbackText);
+  if (image) form.append("Image", image);
+  const response = await api.postForm<AnalyzeTaskResponse>(
+    "/tasks/analyze",
+    form,
+    signal,
+  );
+  return normalizeTask(response);
+};
+
+export const updateTask = async (id: number, title: string, description: string) =>
+  normalizeTask(await api.put<TaskApiDto>(`/tasks/${id}`, { title, description }));
 
 export const deleteTask = (id: number) => api.delete<void>(`/tasks/${id}`);
 
-export const assignTask = (id: number, userId: number) =>
-  api.put<Task>(`/tasks/${id}/assign/${userId}`);
+export const assignTask = async (id: number, userId: number) =>
+  normalizeTask(await api.put<TaskApiDto>(`/tasks/${id}/assign/${userId}`));
 
-export const startTask = (id: number) => api.put<Task>(`/tasks/${id}/start`);
+export const startTask = async (id: number) =>
+  normalizeTask(await api.put<TaskApiDto>(`/tasks/${id}/start`));
 
-export const completeTask = (id: number) => api.put<Task>(`/tasks/${id}/complete`);
+export const completeTask = async (id: number) =>
+  normalizeTask(await api.put<TaskApiDto>(`/tasks/${id}/complete`));
 
 export const getTaskHistory = (taskId: number, signal?: AbortSignal) =>
   api.get<TaskHistory[]>(`/tasks/${taskId}/history`, signal);

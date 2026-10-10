@@ -489,7 +489,7 @@ const Tasks = () => {
           <button
             type="button"
             className="tasks-btn tasks-btn-primary"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => navigate("/tasks/new")}
           >
             <Icon name="add" size={18} />
             Create Task

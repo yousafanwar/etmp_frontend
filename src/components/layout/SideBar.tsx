@@ -14,6 +14,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", icon: "grid_view", to: "/dashboard" },
   { label: "Projects", icon: "view_kanban", to: "/projects" },
   { label: "Tasks", icon: "check_box", to: "/tasks" },
+  { label: "My Tasks", icon: "person_check", to: "/my-tasks" },
   { label: "Team & Users", icon: "group", to: "/team" },
   { label: "Settings", icon: "settings", to: "/settings" },
 ];

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 import Icon from "../../components/common/Icon";
 import TopbarUser from "../../components/layout/TopbarUser";
 import AssigneeSelect from "../../components/tasks/AssigneeSelect";
@@ -17,6 +18,11 @@ import type { Project } from "../../types/project";
 import type { Task, TaskStatus } from "../../types/task";
 import type { User } from "../../types/user";
 import "./Tasks.css";
+
+interface TasksProps {
+  /** When true, only show tasks assigned to the signed-in user. */
+  mineOnly?: boolean;
+}
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
@@ -68,8 +74,9 @@ const buildPageList = (page: number, totalPages: number): (number | "…")[] => 
   return result;
 };
 
-const Tasks = () => {
+const Tasks = ({ mineOnly = false }: TasksProps) => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -168,7 +175,13 @@ const Tasks = () => {
   }, []);
 
   useEffect(() => {
+    if (mineOnly && (authLoading || !user)) {
+      setLoading(true);
+      return;
+    }
+
     const controller = new AbortController();
+    setLoading(true);
 
     getTasks(
       {
@@ -176,6 +189,7 @@ const Tasks = () => {
         pageSize,
         search: search || undefined,
         status: statusFilter || undefined,
+        assigneeId: mineOnly && user ? user.id : undefined,
       },
       controller.signal,
     )
@@ -190,7 +204,7 @@ const Tasks = () => {
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
-        setError("Failed to load tasks.");
+        setError(mineOnly ? "Failed to load your tasks." : "Failed to load tasks.");
         console.error(err);
       })
       .finally(() => {
@@ -198,7 +212,7 @@ const Tasks = () => {
       });
 
     return () => controller.abort();
-  }, [page, pageSize, search, statusFilter, reloadKey]);
+  }, [page, pageSize, search, statusFilter, reloadKey, mineOnly, user, authLoading]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -409,7 +423,7 @@ const Tasks = () => {
           <Icon name="chevron_right" size={14} />
           <span>Enterprise Backlog</span>
           <Icon name="chevron_right" size={14} />
-          <span className="is-current">All Tasks</span>
+          <span className="is-current">{mineOnly ? "My Tasks" : "All Tasks"}</span>
         </nav>
 
         <div className="tasks-topbar-right">
@@ -423,9 +437,10 @@ const Tasks = () => {
 
       <div className="tasks-title-row">
         <div className="tasks-title-group">
-          <h1>Tasks Explorer</h1>
+          <h1>{mineOnly ? "My Tasks" : "Tasks Explorer"}</h1>
           <span className="tasks-count-pill">
-            {totalCount.toLocaleString()} Total Tasks
+            {totalCount.toLocaleString()}{" "}
+            {mineOnly ? "Assigned to Me" : "Total Tasks"}
           </span>
           <span className="tasks-live">
             <span className="tasks-live-dot" />
@@ -585,10 +600,16 @@ const Tasks = () => {
       )}
 
       <div className="tasks-table-card">
-        {loading && <p className="tasks-state">Loading tasks…</p>}
+        {loading && (
+          <p className="tasks-state">
+            {mineOnly ? "Loading your tasks…" : "Loading tasks…"}
+          </p>
+        )}
         {error && !loading && <p className="tasks-state tasks-state-error">{error}</p>}
         {!loading && !error && tasks.length === 0 && (
-          <p className="tasks-state">No tasks found.</p>
+          <p className="tasks-state">
+            {mineOnly ? "No tasks assigned to you." : "No tasks found."}
+          </p>
         )}
 
         {!loading && !error && tasks.length > 0 && (

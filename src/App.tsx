@@ -4,6 +4,7 @@ import { AuthProvider } from "./auth/AuthContext";
 import MainLayout from "./components/layout/MainLayout";
 import CreateTask from "./pages/CreateTask/CreateTask";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import Login from "./pages/Login/Login";
 import ProjectDetails from "./pages/ProjectDetails/ProjectDetails";
 import Projects from "./pages/Projects/Projects";
@@ -29,6 +30,7 @@ const App = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       <Route element={<RequireAuth />}>
         <Route element={<MainLayout />}>

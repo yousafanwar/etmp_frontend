@@ -876,6 +876,46 @@
   font-size: 13px;
 }
 
+.settings-success-banner {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--success-bg);
+  color: var(--success-fg);
+  border: 1px solid #abefc6;
+  font-size: 13px;
+}
+
+.settings-password-wrap {
+  position: relative;
+}
+
+.settings-password-wrap input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.settings-password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #98a2b3;
+  cursor: pointer;
+}
+
+.settings-password-toggle:hover {
+  color: var(--on-surface-variant);
+  background: var(--surface-low);
+}
+
 .settings-loading {
   padding: 40px 24px;
   text-align: center;

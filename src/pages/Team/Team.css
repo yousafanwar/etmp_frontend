@@ -1039,6 +1039,36 @@
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
+.team-password-wrap {
+  position: relative;
+}
+
+.team-password-wrap input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.team-password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.team-password-toggle:hover {
+  background: var(--surface-low);
+}
+
 .team-modal-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1104,6 +1134,92 @@
 .team-access-count {
   font-size: 11px;
   font-weight: 500;
+}
+
+.team-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.team-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 8px 0 10px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 999px;
+  background: var(--surface-low);
+  color: var(--on-surface);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.team-skill-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.team-skill-chip button:hover:not(:disabled) {
+  background: var(--surface-lowest);
+  color: var(--on-surface);
+}
+
+.team-skill-chip button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.team-add-skill {
+  position: relative;
+}
+
+.team-add-skill-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 240px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 12px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-md);
+}
+
+.team-add-skill-menu button {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--on-surface);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.team-add-skill-menu button:hover {
+  background: var(--surface-low);
+}
+
+.team-add-skill-empty {
+  padding: 10px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
 }
 
 /* ---------- Responsive ---------- */

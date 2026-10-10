@@ -439,6 +439,45 @@
   color: var(--info-fg);
 }
 
+.pd-skill-chip.is-more {
+  color: var(--on-surface-variant);
+}
+
+.pd-skill-edit,
+.pd-skill-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pd-skill-edit {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.pd-skill-edit:hover,
+.pd-skill-empty-btn:hover {
+  color: var(--on-surface);
+  background: var(--surface-low);
+}
+
+.pd-skill-empty-btn {
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.pd-skills-empty {
+  color: var(--on-surface-variant);
+}
+
 .pd-description {
   max-width: 720px;
   color: var(--on-surface-variant);
@@ -1067,6 +1106,20 @@
   overflow: hidden;
 }
 
+.pd-modal-skills {
+  width: min(520px, 100%);
+  overflow: visible;
+}
+
+.pd-modal-skills .pd-modal-header {
+  border-radius: 16px 16px 0 0;
+}
+
+.pd-modal-skills .pd-modal-form {
+  overflow: visible;
+  padding-bottom: 20px;
+}
+
 .pd-modal-header {
   display: flex;
   align-items: center;
@@ -1078,6 +1131,169 @@
 .pd-modal-header h2 {
   font-size: 16px;
   font-weight: 700;
+}
+
+.pd-modal-sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pd-modal-text {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pd-modal-state {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+}
+
+.pd-modal-error {
+  margin: 0;
+  color: var(--error, #b42318);
+  font-size: 13px;
+}
+
+.pd-manage-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 0 2px;
+}
+
+.pd-manage-skill-list.is-menu-open {
+  padding-bottom: 8px;
+}
+
+.pd-manage-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 8px 0 12px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 999px;
+  background: var(--surface-low);
+  color: var(--on-surface);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pd-manage-skill-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.pd-manage-skill-chip button:hover:not(:disabled) {
+  background: var(--surface-lowest);
+  color: var(--on-surface);
+}
+
+.pd-manage-skill-chip button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pd-add-skill {
+  position: relative;
+  z-index: 2;
+}
+
+.pd-add-skill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 999px;
+  background: var(--surface-lowest);
+  color: var(--on-surface);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+  outline: none;
+}
+
+.pd-add-skill-btn:hover:not(:disabled) {
+  background: var(--surface-low);
+}
+
+.pd-add-skill-btn:focus-visible {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.pd-add-skill-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pd-add-skill-btn[aria-expanded="true"] {
+  background: var(--surface-low);
+  border-color: #c7cdd8;
+}
+
+.pd-add-skill-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  min-width: 260px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 12px;
+  background: var(--surface-lowest);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+}
+
+.pd-add-skill-menu button {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--on-surface);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pd-add-skill-menu button:hover {
+  background: var(--surface-low);
+}
+
+.pd-add-skill-empty {
+  padding: 10px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+}
+
+.pd-modal-skills .pd-modal-footer {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--outline-soft);
 }
 
 .pd-modal-form {

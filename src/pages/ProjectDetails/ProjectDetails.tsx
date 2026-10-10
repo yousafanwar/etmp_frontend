@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { ApiError } from "../../api/client";
+import { useAuth } from "../../auth/AuthContext";
 import Icon from "../../components/common/Icon";
 import TopbarUser from "../../components/layout/TopbarUser";
 import {
@@ -9,12 +11,16 @@ import {
   completeTask,
 } from "../../services/TaskService";
 import {
+  addProjectSkill,
   getProject,
   getProjectSkills,
   getProjectUsers,
+  removeProjectSkill,
 } from "../../services/projectService";
+import { getSkills } from "../../services/skillService";
 import { getRoles, getUsers } from "../../services/userService";
 import type { Project, ProjectSkill, ProjectUser } from "../../types/project";
+import type { Skill } from "../../types/skill";
 import type { Task } from "../../types/task";
 import type { Role, User } from "../../types/user";
 import "./ProjectDetails.css";
@@ -227,9 +233,14 @@ const ProjectDetailsPage = () => {
   return <ProjectDetails key={id ?? "invalid"} />;
 };
 
+const errorMessage = (err: unknown, fallback: string) =>
+  err instanceof ApiError && err.message ? err.message : fallback;
+
 const ProjectDetails = () => {
   const { id: idParam } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const isAdmin = /admin/i.test(currentUser?.roleName ?? "");
   const projectId = Number(idParam);
   const invalidId = !Number.isInteger(projectId) || projectId <= 0;
 
@@ -251,6 +262,16 @@ const ProjectDetails = () => {
   const [createDescription, setCreateDescription] = useState("");
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const [skillsModalOpen, setSkillsModalOpen] = useState(false);
+  const [skillsSelection, setSkillsSelection] = useState<ProjectSkill[]>([]);
+  const [skillsBaseline, setSkillsBaseline] = useState<number[]>([]);
+  const [skillsCatalog, setSkillsCatalog] = useState<Skill[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+  const [skillsSaving, setSkillsSaving] = useState(false);
+  const [skillsAddOpen, setSkillsAddOpen] = useState(false);
+  const [skillsModalError, setSkillsModalError] = useState("");
+  const skillsAddRef = useRef<HTMLDivElement>(null);
 
   const rolesById = useMemo(() => {
     const map = new Map<number, string>();
@@ -402,6 +423,90 @@ const ProjectDetails = () => {
     }
   };
 
+  const availableProjectSkills = useMemo(() => {
+    const owned = new Set(skillsSelection.map((s) => s.skillId));
+    return skillsCatalog.filter((s) => !owned.has(s.id));
+  }, [skillsCatalog, skillsSelection]);
+
+  useEffect(() => {
+    if (!skillsAddOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (skillsAddRef.current && !skillsAddRef.current.contains(e.target as Node)) {
+        setSkillsAddOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointer);
+    return () => document.removeEventListener("mousedown", onPointer);
+  }, [skillsAddOpen]);
+
+  const openSkillsModal = () => {
+    setSkillsModalError("");
+    setSkillsAddOpen(false);
+    setSkillsSelection(skills);
+    setSkillsBaseline(skills.map((s) => s.skillId));
+    setSkillsModalOpen(true);
+    setSkillsLoading(true);
+    getSkills()
+      .then((catalog) => {
+        setSkillsCatalog(Array.isArray(catalog) ? catalog : []);
+      })
+      .catch((err: unknown) => {
+        console.error(err);
+        setSkillsCatalog([]);
+        setSkillsModalError(errorMessage(err, "Failed to load skills catalog."));
+      })
+      .finally(() => setSkillsLoading(false));
+  };
+
+  const closeSkillsModal = () => {
+    if (skillsSaving) return;
+    setSkillsModalOpen(false);
+    setSkillsAddOpen(false);
+    setSkillsModalError("");
+  };
+
+  const addSkillLocal = (skill: Skill) => {
+    setSkillsSelection((prev) =>
+      prev.some((s) => s.skillId === skill.id)
+        ? prev
+        : [...prev, { skillId: skill.id, skillName: skill.name }],
+    );
+    setSkillsAddOpen(false);
+  };
+
+  const removeSkillLocal = (skillId: number) => {
+    setSkillsSelection((prev) => prev.filter((s) => s.skillId !== skillId));
+  };
+
+  const handleSaveProjectSkills = async () => {
+    const desired = new Set(skillsSelection.map((s) => s.skillId));
+    const current = new Set(skillsBaseline);
+    const toAdd = [...desired].filter((id) => !current.has(id));
+    const toRemove = [...current].filter((id) => !desired.has(id));
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      closeSkillsModal();
+      return;
+    }
+
+    setSkillsSaving(true);
+    setSkillsModalError("");
+    const results = await Promise.allSettled([
+      ...toAdd.map((skillId) => addProjectSkill(projectId, skillId)),
+      ...toRemove.map((skillId) => removeProjectSkill(projectId, skillId)),
+    ]);
+    setSkillsSaving(false);
+
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) {
+      setSkillsModalError(`${failed} of ${results.length} skill changes failed.`);
+      return;
+    }
+
+    setSkills(skillsSelection);
+    setSkillsModalOpen(false);
+    setSkillsAddOpen(false);
+  };
+
   if (invalidId) {
     return (
       <div className="pd-page">
@@ -526,18 +631,42 @@ const ProjectDetails = () => {
                 {formatShortDate(project.startDate)} → {formatDate(project.endDate, "Open")}
               </span>
             </div>
-            {skills.length > 0 && (
-              <div className="pd-meta-item">
-                <span className="pd-meta-label">Skills</span>
+            <div className="pd-meta-item">
+              <span className="pd-meta-label">Skills</span>
+              {skills.length > 0 ? (
                 <span className="pd-skill-chips">
                   {skills.slice(0, 4).map((s) => (
                     <span key={s.skillId} className="pd-skill-chip">
                       {s.skillName}
                     </span>
                   ))}
+                  {skills.length > 4 && (
+                    <span className="pd-skill-chip is-more">+{skills.length - 4}</span>
+                  )}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="pd-skill-edit"
+                      onClick={openSkillsModal}
+                      aria-label="Manage project skills"
+                    >
+                      <Icon name="edit" size={14} />
+                    </button>
+                  )}
                 </span>
-              </div>
-            )}
+              ) : (
+                <span className="pd-meta-value pd-skills-empty">
+                  {isAdmin ? (
+                    <button type="button" className="pd-skill-empty-btn" onClick={openSkillsModal}>
+                      <Icon name="add" size={14} />
+                      Assign skills
+                    </button>
+                  ) : (
+                    "None assigned"
+                  )}
+                </span>
+              )}
+            </div>
           </div>
 
           {project.description && (
@@ -546,6 +675,12 @@ const ProjectDetails = () => {
         </div>
 
         <div className="pd-header-actions">
+          {isAdmin && (
+            <button type="button" className="pd-btn pd-btn-secondary" onClick={openSkillsModal}>
+              <Icon name="psychology" size={18} />
+              Manage Skills
+            </button>
+          )}
           <button type="button" className="pd-btn pd-btn-secondary">
             <Icon name="analytics" size={18} />
             Sprint Report
@@ -969,6 +1104,119 @@ const ProjectDetails = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {skillsModalOpen && (
+        <div
+          className="pd-modal-backdrop"
+          role="presentation"
+          onClick={closeSkillsModal}
+        >
+          <div
+            className="pd-modal pd-modal-skills"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pd-skills-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="pd-modal-header">
+              <div>
+                <h2 id="pd-skills-title">Project Skills</h2>
+                <span className="pd-modal-sub">{project?.name}</span>
+              </div>
+              <button
+                type="button"
+                className="pd-icon-btn"
+                aria-label="Close"
+                onClick={closeSkillsModal}
+              >
+                <Icon name="close" size={20} />
+              </button>
+            </div>
+            <div className="pd-modal-form">
+              <p className="pd-modal-text">
+                Skills available when creating tasks and used for staffing eligibility on this
+                project.
+              </p>
+              {skillsLoading ? (
+                <p className="pd-modal-state">Loading skills…</p>
+              ) : (
+                <div className={`pd-manage-skill-list${skillsAddOpen ? " is-menu-open" : ""}`}>
+                  {skillsSelection.map((skill) => (
+                    <span key={skill.skillId} className="pd-manage-skill-chip">
+                      {skill.skillName}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${skill.skillName}`}
+                        disabled={skillsSaving}
+                        onClick={() => removeSkillLocal(skill.skillId)}
+                      >
+                        <Icon name="close" size={14} />
+                      </button>
+                    </span>
+                  ))}
+
+                  <div className="pd-add-skill" ref={skillsAddRef}>
+                    <button
+                      type="button"
+                      className="pd-add-skill-btn"
+                      disabled={skillsSaving || skillsCatalog.length === 0}
+                      aria-expanded={skillsAddOpen}
+                      onClick={() => setSkillsAddOpen((open) => !open)}
+                    >
+                      <Icon name="add" size={16} />
+                      Add Skill
+                      <Icon name="expand_more" size={16} />
+                    </button>
+                    {skillsAddOpen && (
+                      <div className="pd-add-skill-menu" role="listbox">
+                        {availableProjectSkills.length === 0 ? (
+                          <div className="pd-add-skill-empty">
+                            {skillsCatalog.length === 0
+                              ? "No skills in the catalog yet."
+                              : "All catalog skills are already assigned."}
+                          </div>
+                        ) : (
+                          availableProjectSkills.map((skill) => (
+                            <button
+                              key={skill.id}
+                              type="button"
+                              role="option"
+                              onClick={() => addSkillLocal(skill)}
+                            >
+                              {skill.name}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {skillsModalError && (
+                <p className="pd-modal-error">{skillsModalError}</p>
+              )}
+              <div className="pd-modal-footer">
+                <button
+                  type="button"
+                  className="pd-btn pd-btn-secondary"
+                  onClick={closeSkillsModal}
+                  disabled={skillsSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="pd-btn pd-btn-primary"
+                  disabled={skillsSaving || skillsLoading}
+                  onClick={() => void handleSaveProjectSkills()}
+                >
+                  {skillsSaving ? "Saving…" : "Save Skills"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

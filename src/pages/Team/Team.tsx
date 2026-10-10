@@ -19,14 +19,27 @@ import {
   removeProjectUser,
 } from "../../services/projectService";
 import { getTasks } from "../../services/TaskService";
-import { createUser, deleteUser, getRoles, getUsers, updateUser } from "../../services/userService";
+import { getSkills } from "../../services/skillService";
+import { adminResetPassword } from "../../services/authService";
+import {
+  addUserSkill,
+  createUser,
+  deleteUser,
+  getRoles,
+  getUsers,
+  getUserSkills,
+  removeUserSkill,
+  updateUser,
+} from "../../services/userService";
 import type { Project, ProjectUser } from "../../types/project";
+import type { Skill, UserSkill } from "../../types/skill";
 import type { Role, User } from "../../types/user";
 import "./Team.css";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 const AVATAR_TONES = ["tone-indigo", "tone-teal", "tone-amber", "tone-rose", "tone-slate"] as const;
 const PRIVILEGED_ROLE = /admin|lead|manager/i;
+const MIN_PASSWORD_LENGTH = 10;
 
 type Tab = "members" | "teams";
 type RoleFilter = "all" | number;
@@ -127,7 +140,18 @@ const Team = () => {
   const [form, setForm] = useState<MemberForm>(emptyForm(0));
   const [accessTarget, setAccessTarget] = useState<User | null>(null);
   const [accessSelection, setAccessSelection] = useState<Set<number>>(new Set());
+  const [skillsTarget, setSkillsTarget] = useState<User | null>(null);
+  const [skillsSelection, setSkillsSelection] = useState<UserSkill[]>([]);
+  const [skillsBaseline, setSkillsBaseline] = useState<number[]>([]);
+  const [skillsCatalog, setSkillsCatalog] = useState<Skill[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+  const [skillsAddOpen, setSkillsAddOpen] = useState(false);
+  const skillsAddRef = useRef<HTMLDivElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<User | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [confirmResetPassword, setConfirmResetPassword] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
 
@@ -213,6 +237,17 @@ const Team = () => {
     const timer = window.setTimeout(() => setBanner(null), 3500);
     return () => window.clearTimeout(timer);
   }, [banner]);
+
+  useEffect(() => {
+    if (!skillsAddOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (skillsAddRef.current && !skillsAddRef.current.contains(e.target as Node)) {
+        setSkillsAddOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointer);
+    return () => document.removeEventListener("mousedown", onPointer);
+  }, [skillsAddOpen]);
 
   const roleById = useMemo(() => new Map(roles.map((r) => [r.id, r])), [roles]);
   const roleName = useCallback(
@@ -385,7 +420,7 @@ const Team = () => {
       return;
     }
     const rect = e.currentTarget.getBoundingClientRect();
-    const menuHeight = isAdmin ? 230 : 100;
+    const menuHeight = isAdmin ? 310 : 100;
     const top =
       rect.bottom + menuHeight > window.innerHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
     setMenu({ userId, top: Math.max(8, top), left: rect.right - 220 });
@@ -413,10 +448,44 @@ const Team = () => {
     setAccessTarget(u);
   };
 
+  const openSkills = (u: User) => {
+    setMenu(null);
+    setModalError("");
+    setSkillsAddOpen(false);
+    setSkillsSelection([]);
+    setSkillsBaseline([]);
+    setSkillsTarget(u);
+    setSkillsLoading(true);
+    Promise.all([
+      getUserSkills(u.id),
+      getSkills().catch(() => [] as Skill[]),
+    ])
+      .then(([userSkills, catalog]) => {
+        const list = Array.isArray(userSkills) ? userSkills : [];
+        setSkillsSelection(list);
+        setSkillsBaseline(list.map((s) => s.skillId));
+        setSkillsCatalog(Array.isArray(catalog) ? catalog : []);
+      })
+      .catch((err: unknown) => {
+        console.error(err);
+        setModalError(errorMessage(err, "Failed to load member skills."));
+      })
+      .finally(() => setSkillsLoading(false));
+  };
+
   const openDelete = (u: User) => {
     setMenu(null);
     setModalError("");
     setDeleteTarget(u);
+  };
+
+  const openResetPassword = (u: User) => {
+    setMenu(null);
+    setModalError("");
+    setResetPassword("");
+    setConfirmResetPassword("");
+    setShowResetPassword(false);
+    setPasswordTarget(u);
   };
 
   const copyEmail = async (u: User) => {
@@ -433,8 +502,32 @@ const Team = () => {
     if (submitting) return;
     setFormTarget(null);
     setAccessTarget(null);
+    setSkillsTarget(null);
+    setSkillsAddOpen(false);
     setDeleteTarget(null);
+    setPasswordTarget(null);
+    setResetPassword("");
+    setConfirmResetPassword("");
+    setShowResetPassword(false);
     setModalError("");
+  };
+
+  const availableSkillsForTarget = useMemo(() => {
+    const owned = new Set(skillsSelection.map((s) => s.skillId));
+    return skillsCatalog.filter((s) => !owned.has(s.id));
+  }, [skillsCatalog, skillsSelection]);
+
+  const addSkillLocal = (skill: Skill) => {
+    setSkillsSelection((prev) =>
+      prev.some((s) => s.skillId === skill.id)
+        ? prev
+        : [...prev, { skillId: skill.id, skillName: skill.name }],
+    );
+    setSkillsAddOpen(false);
+  };
+
+  const removeSkillLocal = (skillId: number) => {
+    setSkillsSelection((prev) => prev.filter((s) => s.skillId !== skillId));
   };
 
   const handleSaveMember = async (e: FormEvent) => {
@@ -505,6 +598,36 @@ const Team = () => {
     setAccessTarget(null);
   };
 
+  const handleSaveSkills = async () => {
+    if (!skillsTarget) return;
+    const desired = new Set(skillsSelection.map((s) => s.skillId));
+    const current = new Set(skillsBaseline);
+    const toAdd = [...desired].filter((id) => !current.has(id));
+    const toRemove = [...current].filter((id) => !desired.has(id));
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      setSkillsTarget(null);
+      setSkillsAddOpen(false);
+      return;
+    }
+
+    setSubmitting(true);
+    setModalError("");
+    const results = await Promise.allSettled([
+      ...toAdd.map((skillId) => addUserSkill(skillsTarget.id, skillId)),
+      ...toRemove.map((skillId) => removeUserSkill(skillsTarget.id, skillId)),
+    ]);
+    setSubmitting(false);
+
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) {
+      setModalError(`${failed} of ${results.length} skill changes failed.`);
+      return;
+    }
+    setBanner({ kind: "success", text: `Skills updated for ${fullName(skillsTarget)}.` });
+    setSkillsTarget(null);
+    setSkillsAddOpen(false);
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setSubmitting(true);
@@ -529,6 +652,39 @@ const Team = () => {
     } catch (err: unknown) {
       console.error(err);
       setModalError(errorMessage(err, "Failed to delete member."));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAdminResetPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!passwordTarget) return;
+
+    if (resetPassword.length < MIN_PASSWORD_LENGTH) {
+      setModalError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+    if (resetPassword !== confirmResetPassword) {
+      setModalError("Passwords do not match.");
+      return;
+    }
+
+    setSubmitting(true);
+    setModalError("");
+    try {
+      await adminResetPassword(passwordTarget.id, { newPassword: resetPassword });
+      setBanner({
+        kind: "success",
+        text: `Password reset for ${fullName(passwordTarget)}. Share the new password securely.`,
+      });
+      setPasswordTarget(null);
+      setResetPassword("");
+      setConfirmResetPassword("");
+      setShowResetPassword(false);
+    } catch (err: unknown) {
+      console.error(err);
+      setModalError(errorMessage(err, "Failed to reset password."));
     } finally {
       setSubmitting(false);
     }
@@ -1029,6 +1185,14 @@ const Team = () => {
                 <Icon name="folder_shared" size={18} />
                 Manage project access
               </button>
+              <button type="button" role="menuitem" onClick={() => openSkills(menuUser)}>
+                <Icon name="psychology" size={18} />
+                Manage skills
+              </button>
+              <button type="button" role="menuitem" onClick={() => openResetPassword(menuUser)}>
+                <Icon name="key" size={18} />
+                Reset password
+              </button>
             </>
           )}
           <button type="button" role="menuitem" onClick={() => void copyEmail(menuUser)}>
@@ -1218,6 +1382,101 @@ const Team = () => {
         </div>
       )}
 
+      {skillsTarget && (
+        <div className="team-modal-backdrop" role="presentation" onClick={closeModals}>
+          <div
+            className="team-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="skills-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="team-modal-header">
+              <div>
+                <h2 id="skills-title">Member Skills</h2>
+                <span className="team-modal-sub">{fullName(skillsTarget)}</span>
+              </div>
+              <button type="button" className="team-icon-btn" aria-label="Close" onClick={closeModals}>
+                <Icon name="close" size={20} />
+              </button>
+            </div>
+            <div className="team-modal-form">
+              <p className="team-modal-text">
+                Assign catalog skills used for staffing eligibility and skill-based task routing.
+              </p>
+              {skillsLoading ? (
+                <p className="team-state">Loading skills…</p>
+              ) : (
+                <div className="team-skill-list">
+                  {skillsSelection.map((skill) => (
+                    <span key={skill.skillId} className="team-skill-chip">
+                      {skill.skillName}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${skill.skillName}`}
+                        disabled={submitting}
+                        onClick={() => removeSkillLocal(skill.skillId)}
+                      >
+                        <Icon name="close" size={14} />
+                      </button>
+                    </span>
+                  ))}
+
+                  <div className="team-add-skill" ref={skillsAddRef}>
+                    <button
+                      type="button"
+                      className="team-btn team-btn-secondary"
+                      disabled={submitting || skillsCatalog.length === 0}
+                      onClick={() => setSkillsAddOpen((open) => !open)}
+                    >
+                      <Icon name="add" size={18} />
+                      Add Skill
+                      <Icon name="expand_more" size={18} />
+                    </button>
+                    {skillsAddOpen && (
+                      <div className="team-add-skill-menu" role="listbox">
+                        {availableSkillsForTarget.length === 0 ? (
+                          <div className="team-add-skill-empty">
+                            {skillsCatalog.length === 0
+                              ? "No skills in the catalog yet."
+                              : "All catalog skills are already assigned."}
+                          </div>
+                        ) : (
+                          availableSkillsForTarget.map((skill) => (
+                            <button
+                              key={skill.id}
+                              type="button"
+                              role="option"
+                              onClick={() => addSkillLocal(skill)}
+                            >
+                              {skill.name}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {modalError && <p className="team-modal-error">{modalError}</p>}
+              <div className="team-modal-footer">
+                <button type="button" className="team-btn team-btn-secondary" onClick={closeModals}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="team-btn team-btn-primary"
+                  disabled={submitting || skillsLoading}
+                  onClick={() => void handleSaveSkills()}
+                >
+                  {submitting ? "Saving…" : "Save Skills"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleteTarget && (
         <div className="team-modal-backdrop" role="presentation" onClick={closeModals}>
           <div
@@ -1254,6 +1513,80 @@ const Team = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {passwordTarget && (
+        <div className="team-modal-backdrop" role="presentation" onClick={closeModals}>
+          <div
+            className="team-modal is-narrow"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-password-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="team-modal-header">
+              <h2 id="reset-password-title">Reset password</h2>
+              <button type="button" className="team-icon-btn" aria-label="Close" onClick={closeModals}>
+                <Icon name="close" size={20} />
+              </button>
+            </div>
+            <form className="team-modal-form" onSubmit={handleAdminResetPassword}>
+              <p className="team-modal-text">
+                Set a temporary password for <strong>{fullName(passwordTarget)}</strong> (
+                {passwordTarget.email}). Share it securely — they can change it later in Settings.
+              </p>
+              <label>
+                New password
+                <div className="team-password-wrap">
+                  <input
+                    type={showResetPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    minLength={MIN_PASSWORD_LENGTH}
+                    required
+                    disabled={submitting}
+                  />
+                  <button
+                    type="button"
+                    className="team-password-toggle"
+                    onClick={() => setShowResetPassword((v) => !v)}
+                    aria-label={showResetPassword ? "Hide password" : "Show password"}
+                  >
+                    <Icon name={showResetPassword ? "visibility" : "visibility_off"} size={18} />
+                  </button>
+                </div>
+              </label>
+              <label>
+                Confirm password
+                <input
+                  type={showResetPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Re-enter new password"
+                  value={confirmResetPassword}
+                  onChange={(e) => setConfirmResetPassword(e.target.value)}
+                  minLength={MIN_PASSWORD_LENGTH}
+                  required
+                  disabled={submitting}
+                />
+              </label>
+              {modalError && <p className="team-modal-error">{modalError}</p>}
+              <div className="team-modal-footer">
+                <button type="button" className="team-btn team-btn-secondary" onClick={closeModals}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="team-btn team-btn-primary"
+                  disabled={submitting || !resetPassword || !confirmResetPassword}
+                >
+                  {submitting ? "Resetting…" : "Reset Password"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

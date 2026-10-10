@@ -1,5 +1,9 @@
 import { api, tokenStore } from "../api/client";
-import type { LoginResponse } from "../types/auth";
+import type {
+  AdminResetPasswordRequest,
+  LoginResponse,
+  ResetPasswordRequest,
+} from "../types/auth";
 import type { CreateUserRequest, User } from "../types/user";
 import { createUser } from "./userService";
 
@@ -25,3 +29,11 @@ export const logout = async () => {
     tokenStore.clear();
   }
 };
+
+/** Authenticated user changes their own password (requires current password). */
+export const resetPassword = (request: ResetPasswordRequest) =>
+  api.post<void>("/users/reset-password", request);
+
+/** Admin sets a new password for another user (no current password required). */
+export const adminResetPassword = (userId: number, request: AdminResetPasswordRequest) =>
+  api.post<void>(`/users/${userId}/reset-password`, request);

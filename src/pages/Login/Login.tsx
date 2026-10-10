@@ -112,9 +112,9 @@ const Login = () => {
                 <label htmlFor="login-password" className="login-label">
                   Password
                 </label>
-                <a href="#forgot" className="login-forgot">
+                <Link to="/forgot-password" className="login-forgot">
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <div className="login-input-wrap">
                 <Icon name="key" size={20} className="login-input-icon" />

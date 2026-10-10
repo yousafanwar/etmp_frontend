@@ -79,7 +79,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   if (!res.ok) {
     const data = await res.json().catch(() => null);
-    throw new ApiError(res.status, data?.detail ?? data?.title ?? data?.message ?? res.statusText);
+    const message =
+      typeof data === "string"
+        ? data
+        : data?.detail ?? data?.title ?? data?.message ?? res.statusText;
+    throw new ApiError(res.status, message);
   }
 
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);

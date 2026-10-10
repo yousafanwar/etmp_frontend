@@ -218,6 +218,13 @@
   text-decoration: underline;
 }
 
+.login-forgot-copy {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--on-surface-variant);
+}
+
 .login-input-wrap {
   position: relative;
   display: flex;

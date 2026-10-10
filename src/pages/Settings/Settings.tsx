@@ -3,6 +3,7 @@ import { ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import Icon from "../../components/common/Icon";
 import TopbarUser from "../../components/layout/TopbarUser";
+import { resetPassword } from "../../services/authService";
 import { createSkill, getSkills } from "../../services/skillService";
 import {
   addUserSkill,
@@ -16,6 +17,8 @@ import {
 import type { Skill, UserSkill } from "../../types/skill";
 import type { Role, User } from "../../types/user";
 import "./Settings.css";
+
+const MIN_PASSWORD_LENGTH = 10;
 
 type SettingsSection =
   | "profile"
@@ -97,6 +100,14 @@ const Settings = () => {
   const [rolesLoading, setRolesLoading] = useState(false);
   const [rolesError, setRolesError] = useState<string | null>(null);
   const [roleSavingId, setRoleSavingId] = useState<number | null>(null);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   const isAdmin = isAdminRole(user?.roleName);
 
@@ -241,6 +252,51 @@ const Settings = () => {
 
     return () => controller.abort();
   }, [section, isAdmin]);
+
+  const clearPasswordForm = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPasswords(false);
+  };
+
+  const handleChangePassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!currentPassword) {
+      setPasswordError("Enter your current password.");
+      return;
+    }
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setPasswordError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setPasswordError("New password must be different from the current password.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await resetPassword({ currentPassword, newPassword });
+      clearPasswordForm();
+      setPasswordSuccess("Password updated successfully.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Unable to update password. Please try again.";
+      setPasswordError(message);
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
 
   const handleCreateSkill = async (e: FormEvent) => {
     e.preventDefault();
@@ -717,20 +773,114 @@ const Settings = () => {
           )}
 
           {section === "security" && (
-            <>
+            <form onSubmit={handleChangePassword}>
               <div className="settings-panel-header">
                 <div>
                   <h2>Security</h2>
-                  <p>Password, sessions, and SSO controls for your account.</p>
+                  <p>Change your password. Contact an administrator if you cannot sign in.</p>
                 </div>
               </div>
               <div className="settings-panel-body">
-                <p className="settings-placeholder">
-                  Security settings are managed through your organization&apos;s identity provider.
-                  Contact a workspace administrator to rotate credentials or review active sessions.
-                </p>
+                {passwordError && <div className="settings-error-banner">{passwordError}</div>}
+                {passwordSuccess && (
+                  <div className="settings-success-banner">{passwordSuccess}</div>
+                )}
+
+                <div className="settings-fields">
+                  <div className="settings-field full">
+                    <label htmlFor="settings-current-password">Current password</label>
+                    <div className="settings-password-wrap">
+                      <input
+                        id="settings-current-password"
+                        type={showPasswords ? "text" : "password"}
+                        autoComplete="current-password"
+                        value={currentPassword}
+                        onChange={(e) => {
+                          setCurrentPassword(e.target.value);
+                          if (passwordError) setPasswordError(null);
+                          if (passwordSuccess) setPasswordSuccess(null);
+                        }}
+                        disabled={passwordSaving}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="settings-password-toggle"
+                        onClick={() => setShowPasswords((v) => !v)}
+                        aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                      >
+                        <Icon name={showPasswords ? "visibility" : "visibility_off"} size={18} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="settings-field">
+                    <label htmlFor="settings-new-password">New password</label>
+                    <input
+                      id="settings-new-password"
+                      type={showPasswords ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (passwordError) setPasswordError(null);
+                        if (passwordSuccess) setPasswordSuccess(null);
+                      }}
+                      minLength={MIN_PASSWORD_LENGTH}
+                      disabled={passwordSaving}
+                      required
+                    />
+                    <span className="settings-help">
+                      Must be at least {MIN_PASSWORD_LENGTH} characters and different from your
+                      current password.
+                    </span>
+                  </div>
+                  <div className="settings-field">
+                    <label htmlFor="settings-confirm-password">Confirm new password</label>
+                    <input
+                      id="settings-confirm-password"
+                      type={showPasswords ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder="Re-enter new password"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (passwordError) setPasswordError(null);
+                        if (passwordSuccess) setPasswordSuccess(null);
+                      }}
+                      minLength={MIN_PASSWORD_LENGTH}
+                      disabled={passwordSaving}
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-            </>
+              <div className="settings-panel-footer">
+                <div className="settings-footer-actions">
+                  <button
+                    type="button"
+                    className="settings-btn settings-btn-ghost"
+                    onClick={clearPasswordForm}
+                    disabled={passwordSaving || (!currentPassword && !newPassword && !confirmPassword)}
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="submit"
+                    className="settings-btn settings-btn-primary"
+                    disabled={
+                      passwordSaving ||
+                      !currentPassword ||
+                      !newPassword ||
+                      !confirmPassword
+                    }
+                  >
+                    <Icon name="key" size={18} />
+                    {passwordSaving ? "Updating…" : "Update Password"}
+                  </button>
+                </div>
+              </div>
+            </form>
           )}
 
           {section === "preferences" && (
